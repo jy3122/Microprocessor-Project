@@ -3,6 +3,7 @@
 extrn    Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIMER0_ISR,Check_Overflow
 extrn    Elapsed_Time_L,Elapsed_Time_M,Elapsed_Time_H
 extrn    LCD_Setup, LCD_Write_Message,LCD_Write_Hex, LCD_Send_Byte_D
+extrn    Compare_Pattern
 ; Data section for storing variables in access RAM
     
     
@@ -32,21 +33,10 @@ Main_Loop_Start:
     call Start_Timer
     call Button_Released
     call Check_Overflow
+    call Compare_Pattern
     ;movlw 0x80
     ;call LCD_Send_Byte_D
-    
-    
-    ;movf Elapsed_Time_H, W, A
-    ;movf PORTD, W, A
-    ;call LCD_Write_Hex   ; Send the detected key to the LCD display
-    
-    ;movf Elapsed_Time_M, W, A
-    ;call LCD_Write_Hex 
-    
-    ;movf Elapsed_Time_L, W, A
-    ;call LCD_Write_Hex 
-    
-    
+
     
     movlw 0xFF            ; Load 0xFF into W for delay counter initialization
     movwf delay_count, A  ; Initialize delay counter
