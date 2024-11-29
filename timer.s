@@ -1,7 +1,7 @@
 #include <xc.inc>
     
 global Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIMER0_ISR,Check_Overflow
-global Elapsed_Time_L,Elapsed_Time_M,Elapsed_Time_H  
+global Elapsed_Time_L,Elapsed_Time_M,Elapsed_Time_H, Pattern, Length
 extrn  LCD_Send_Byte_D
     
 psect udata_acs
@@ -14,7 +14,11 @@ Elapsed_Time_M:ds 1
 Elapsed_Time_H:ds 1
     
 delay_count: ds 1      ; Variable for delay routine counter
-    
+   
+Pattern: ds 5
+
+Length: ds 1
+
     
 
 psect timer_code, class=CODE
@@ -133,25 +137,38 @@ Check_Overflow:
     goto Write_Dot               ; If Zero, write '.'
 
     goto Write_Dash              ; Otherwise, write '-'
- 
-Write_Dot:
-
-    movlw '.'                    ; Load ASCII value of '.' into W
-
-    call LCD_Send_Byte_D         ; Send the byte to LCD as data
-
-    return
- 
-Write_Dash:
-
-    movlw '-'                    ; Load ASCII value of '-' into W
-
-    call LCD_Send_Byte_D         ; Send the byte to LCD as data
-
-    return
-
- 
     
+    
+Write_Dot:
+    movlw '.'                   ; ASCII value of '.'
+    call LCD_Send_Byte_D        ; Written into LCD
+    
+    movlw Pattern              ; load initial address of pattern
+    movwf FSR0, A              ; file select register
+    movf Length, W, A          ; current length
+    addwf FSR0, F, A           ; calculate target position?Pattern + Length?
+    movlw '.'                  ; load '.'
+    movwf INDF0, A             ; Indirect file register,load '.' to current position
+    incf Length, F, A          ; increment length
+    return
+    
+    
+    
+Write_Dash:
+    movlw '-'                   ; ASCII value of '_'
+    call LCD_Send_Byte_D        ; written into LCD
+    
+    movlw Pattern              ; load initial address of pattern
+    movwf FSR0, A              ; file select register
+    movf Length, W, A          ; current length
+    addwf FSR0, F, A           ; calculate target position?Pattern + Length?
+    movlw '-'                  ; load '.'
+    movwf INDF0, A             ; Indirect file register,load '.' to current position
+    incf Length, F, A          ; increment length
+    return
+    
+ 
+
 
 TIMER0_ISR:
 
