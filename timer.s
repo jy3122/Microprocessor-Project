@@ -4,11 +4,7 @@ global Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIM
 global Elapsed_Time_L,Elapsed_Time_M,Elapsed_Time_H  
     
 psect udata_acs
-Overflow_Count:ds 1 
-
-TMR0_HIGH:ds 1        
-
-TMR0_LOW:ds 1         
+Overflow_Count:ds 1       
 
 Elapsed_Time_L:ds 1   
    
@@ -63,8 +59,6 @@ Button_Pressed:
     
     return
  
-    ; Start Timer0
-    ;goto Start_Timer
     
     
 Start_Timer:
@@ -90,13 +84,12 @@ Start_Timer:
     
     return
     
-    ;goto Button_Released
     
 Button_Released:
     
     btfsc PORTJ,0,A
     
-    goto Button_Released;loop until released
+    goto Button_Released  ;loop until released
     
     movlw 0xFF            ; Load 0xFF into W for delay counter initialization
     movwf delay_count, A  ; Initialize delay counter
@@ -119,18 +112,15 @@ Button_Released:
     
 Process_Timer:
     
+    
     movf Overflow_Count, W, A           
     
     movwf Elapsed_Time_H, A   ; high 8 bit = overflowcount
-    
-    movf TMR0H, W,A           
-    
-    movwf Elapsed_Time_M,A   ; ELAPSED_TIME_M = high bit of TMR0
-    
-    movf TMR0L, W,A           
-    
-    movwf Elapsed_Time_L,A   ; ELAPSED_TIME_L = Low bit of TMR0
-    
+        
+    movff   TMR0L, Elapsed_Time_L  ; ELAPSED_TIME_M = low byte of TMR0
+    movff   TMR0H, Elapsed_Time_M  ; ELAPSED_TIME_M = high bit of TMR0
+     
+    ;movff   TMR0L, PORTH    
     
     return
     
