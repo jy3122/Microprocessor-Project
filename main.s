@@ -31,23 +31,22 @@ Main_Loop_Start:
     call Button_Pressed
     call Start_Timer
     call Button_Released
-    ;call Process_Timer      ; Identify which column is pressed
     ;movlw 0x80
     ;call LCD_Send_Byte_D
     
     
-    movf Elapsed_Time_H,W,A
-   
-    ; movf PORTD, W, A
-
-    ;call LCD_Write_Hex   ; Send the detected key to the LCD display
+    movf Elapsed_Time_H, W, A
+    ;movf PORTD, W, A
+    call LCD_Write_Hex   ; Send the detected key to the LCD display
     
-    ;movf Elapsed_Time_M,A
-    ;call LCD_Write_Hex 
-    
-    ;movf Elapsed_Time_L,W,A
-    
+    movf Elapsed_Time_M, W, A
     call LCD_Write_Hex 
+    
+    movf Elapsed_Time_L, W, A
+    call LCD_Write_Hex 
+    
+    
+    
     movlw 0xFF            ; Load 0xFF into W for delay counter initialization
     movwf delay_count, A  ; Initialize delay counter
     call delay            ; Call delay subroutine
