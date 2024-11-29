@@ -1,27 +1,27 @@
 #include <xc.inc>
     
 global Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIMER0_ISR
-org 0x0000
-goto Setup_Timer           ; Jump to main program
-org 0x0008          ; High-priority interrupt vector
-goto TIMER0_ISR     ; Jump to Timer0 interrupt service routine
+global Elapsed_Time_L,Elapsed_Time_M,Elapsed_Time_H  
+    
+psect udata_acs
+Overflow_Count:ds 1 
 
+TMR0_HIGH:ds 1        
+
+TMR0_LOW:ds 1         
+
+Elapsed_Time_L:ds 1   
+   
+Elapsed_Time_M:ds 1   
+
+Elapsed_Time_H:ds 1
+    
+delay_count: ds 1      ; Variable for delay routine counter
+    
     
 
-; Variables in RAM
+psect timer_code, class=CODE
 
-Overflow_Count   EQU 0x20   ; Counter for Timer0 overflows
-
-TMR0_HIGH        EQU 0x21   ; High byte of Timer0 value
-
-TMR0_LOW         EQU 0x22   ; Low byte of Timer0 value
-
-Elapsed_Time_L   EQU 0x23   ; Low byte of elapsed time
-   
-Elapsed_Time_M   EQU 0x24   ;mid bit
-
-Elapsed_Time_H   EQU 0x25   ; High byte of elapsed time
- 
 ; Initialization Routine
 
 Setup_Timer:
@@ -30,7 +30,7 @@ Setup_Timer:
  
     ; Set up Timer0
 
-    movlw 0b10000111    ; Configure Timer0: 16-bit, Fosc/4, 1:256 prescaler
+    movlw 0b00000111    ; Configure Timer0: 16-bit, Fosc/4, 1:256 prescaler
 
     movwf T0CON,A
 
@@ -38,63 +38,97 @@ Setup_Timer:
 
     clrf TMR0H,A          ; Clear Timer0 high byte
     
-    movlw 0b10100000
+    movlw 0b10000000      ;configure interrupt
+    
     movwf INTCON,A
     
-    ;bcf INTCON,TMR0IF   ; Clear Timer0 interupt flag
-
-    ;bsf INTCON, TMR0IE  ; Enable Timer0 interrupt, bit set file
-
-    ;bsf INTCON, GIE     ; Enable global interrupts
-   
- 
     ; Configure RJ0 as input
-
     bsf TRISJ, 0,A        ; Set RJ0 (PORTJ, bit 0) as input
+    clrf    TRISD
+    return
  
 Button_Pressed:
 
     btfss PORTJ, 0,A      ; Wait for RJ0 to go high, bit test file, skip if set
-
+    
     goto Button_Pressed ;loop until pressed
+    
+    movlw 0xFF            ; Load 0xFF into W for delay counter initialization
+    movwf delay_count, A  ; Initialize delay counter
+    call delay            ; Call delay subroutine
+    
+    btfss PORTJ, 0,A      ; Wait for RJ0 to go high, bit test file, skip if set
+    
+    goto Button_Pressed ;loop until pressed
+    
+    return
  
     ; Start Timer0
-    goto Start_Timer
+    ;goto Start_Timer
+    
     
 Start_Timer:
-    bcf T0CON, TMR0ON   ;bit clear file, i.e. stop timer
+    bcf TMR0IE      ;disenable timer0 interrupt
+    
+    bcf TMR0IF      ;clear overflow flag
+    
     clrf TMR0L,A       ;clear timer
+    
     clrf TMR0H,A
+    
     clrf Overflow_Count,A
+    
     clrf Elapsed_Time_L,A
+    
     clrf Elapsed_Time_M,A
+    
     clrf Elapsed_Time_H,A
-    bsf T0CON,TMR0ON     ;start timer
+    
+    bsf TMR0ON     ;start timer
+    
+    bsf TMR0IE     ;enable timer0 interrupt
+    
+    return
+    
+    ;goto Button_Released
     
 Button_Released:
+    
     btfsc PORTJ,0,A
-    goto Button_Release;loop until released
+    
+    goto Button_Released;loop until released
+    
+    movlw 0xFF            ; Load 0xFF into W for delay counter initialization
+    movwf delay_count, A  ; Initialize delay counter
+    call delay            ; Call delay subroutine
+    
+    
+    btfsc PORTJ,0,A
+    
+    goto Button_Released;loop until released
     
     ; if released
-    bcf T0CON, TMR0ON      ; stop Timer
+    bcf TMR0ON      ; stop Timer
+    
+    bcf TMR0IE      ;disenable timer0 interrupt
+    
     call Process_Timer     
-    goto Button_Pressed      
+    
+    return
+    
     
 Process_Timer:
-    ; Get current Timer0 tick value (16 bits)
-    movf TMR0L, W,A         
-    movwf TMR0_LOW,A        
-    movf TMR0H, W,A         ; W = 0x02
-    movwf TMR0_HIGH,A       ; TMR0_HIGH = 0x02
- 
- 
-    movf Overflow_Count, W,A           
-    movwf Elapsed_Time_H,A   ; high 8 bit = overflowcount
+    
+    movf Overflow_Count, W, A           
+    
+    movwf Elapsed_Time_H, A   ; high 8 bit = overflowcount
     
     movf TMR0H, W,A           
+    
     movwf Elapsed_Time_M,A   ; ELAPSED_TIME_M = high bit of TMR0
     
     movf TMR0L, W,A           
+    
     movwf Elapsed_Time_L,A   ; ELAPSED_TIME_L = Low bit of TMR0
     
     
@@ -103,14 +137,22 @@ Process_Timer:
 
 TIMER0_ISR:
 
-    btfss INTCON, TMR0IF ; Check if Timer0 overflowed (flag)
+    btfss TMR0IF ; Check if Timer0 overflowed (flag)
 
-    retfie FAST          ; Return if not a Timer0 interrupt, return from interrupt enable
+    retfie f          ; Return if not a Timer0 interrupt, return from interrupt enable
  
-    incf Overflow_Count, F ; Increment overflow counter, increment file register, save to file
+    incf Overflow_Count, F, A ; Increment overflow counter, increment file register, save to file
+    movff   Overflow_Count, PORTD
 
-    bcf INTCON, TMR0IF     ; Clear Timer0 interrupt flag
+    bcf TMR0IF     ; Clear Timer0 interrupt flag
 
-    retfie FAST            ; Return from interrupt
- end
+    retfie f            ; Return from interrupt
+    
+    
+delay:
+    decfsz delay_count, A ; Decrement the delay counter until zero
+    bra delay             ; Loop until counter is zero
+    return                ; Return from delay subroutine
+
+
 
