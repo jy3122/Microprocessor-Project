@@ -1,7 +1,8 @@
 #include <xc.inc>
     
-global Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIMER0_ISR
+global Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIMER0_ISR,Check_Overflow
 global Elapsed_Time_L,Elapsed_Time_M,Elapsed_Time_H  
+extrn  LCD_Send_Byte_D
     
 psect udata_acs
 Overflow_Count:ds 1       
@@ -40,7 +41,7 @@ Setup_Timer:
     
     ; Configure RJ0 as input
     bsf TRISJ, 0,A        ; Set RJ0 (PORTJ, bit 0) as input
-    clrf    TRISD
+    clrf    TRISD,A
     return
  
 Button_Pressed:
@@ -111,18 +112,45 @@ Button_Released:
     
     
 Process_Timer:
-    
-    
+   
     movf Overflow_Count, W, A           
     
     movwf Elapsed_Time_H, A   ; high 8 bit = overflowcount
         
     movff   TMR0L, Elapsed_Time_L  ; ELAPSED_TIME_M = low byte of TMR0
+    
     movff   TMR0H, Elapsed_Time_M  ; ELAPSED_TIME_M = high bit of TMR0
      
-    ;movff   TMR0L, PORTH    
-    
     return
+    
+    
+Check_Overflow:
+
+    movf Overflow_Count, W, A    ; Load Overflow_Count into W
+
+    btfsc STATUS, 2,A              ; Check if Overflow_Count == 0 (Zero flag set), skip if Z==0 (ie, overflowcount not zero)
+
+    goto Write_Dot               ; If Zero, write '.'
+
+    goto Write_Dash              ; Otherwise, write '-'
+ 
+Write_Dot:
+
+    movlw '.'                    ; Load ASCII value of '.' into W
+
+    call LCD_Send_Byte_D         ; Send the byte to LCD as data
+
+    return
+ 
+Write_Dash:
+
+    movlw '-'                    ; Load ASCII value of '-' into W
+
+    call LCD_Send_Byte_D         ; Send the byte to LCD as data
+
+    return
+
+ 
     
 
 TIMER0_ISR:
