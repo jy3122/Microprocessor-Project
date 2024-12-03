@@ -83,6 +83,10 @@ Start_Timer:
     
     clrf Elapsed_Time_H,A
     
+    clrf FSR0,A
+    
+    clrf INDF0,A
+    
     bsf TMR0ON     ;start timer
     
     bsf TMR0IE     ;enable timer0 interrupt
@@ -146,8 +150,8 @@ Write_Dot:
     movlw Pattern              ; load initial address of pattern
     movwf FSR0, A              ; file select register
     movf Length, W, A          ; current length
-    addwf FSR0, F, A           ; calculate target position?Pattern + Length?
-    movlw '.'                  ; load '.'
+    addwf FSR0, F, A           ; calculate target position Pattern + Length
+    movlw '0'                  ; load '.'
     movwf INDF0, A             ; Indirect file register,load '.' to current position
     incf Length, F, A          ; increment length
     return
@@ -162,7 +166,7 @@ Write_Dash:
     movwf FSR0, A              ; file select register
     movf Length, W, A          ; current length
     addwf FSR0, F, A           ; calculate target position?Pattern + Length?
-    movlw '-'                  ; load '.'
+    movlw '1'                  ; load '.'
     movwf INDF0, A             ; Indirect file register,load '.' to current position
     incf Length, F, A          ; increment length
     return
