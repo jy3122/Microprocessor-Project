@@ -1,316 +1,69 @@
 #include <xc.inc>
+global Decode_Morse, Display_Result
+extrn LCD_Send_Byte_D,LookupTable, Pattern, Length,LookupTable_End
     
-global Compare_Pattern
-extrn  LCD_Send_Byte_D, Pattern, Length
     
 psect udata_acs
-Decoded_Char: ds 1
-    
+tem_length: ds 1 
+ 
+ 
 
-psect decode_code, class=CODE  
+psect morse_decoder, class=CODE
 
-    
+; Decodes the Morse code stored in Pattern
+Decode_Morse:
+    movlw LookupTable        ; Load base address of LookupTable
+    movwf FSR2, A            ; Set FSR0 to LookupTable
+    goto Decode_Loop
+ 
+Decode_Loop:
+    ; Compare Length
+    movf Length, W, A        ; Load the length of the current Morse code input
+    movwf tem_length, A      
+    subwf INDF2, W, A        ; Compare with the first byte of the table entry (length)
+    btfss STATUS, 2, A       ; Skip if the lengths are equal (Z flag is set)
+    goto Next_Entry          ; If not equal, check the next entry
+ 
+    ; Compare Pattern
+    incf FSR2, F, A          ; Point to the Morse code pattern in the table
+    movlw Pattern            ; Load address of Pattern
+    movwf FSR1, A            ; Set FSR1 to Pattern
+    goto Compare_Pattern
+ 
 Compare_Pattern:
-    
-    movf Length, W, A          ; Get the length of the input pattern
-
-    andlw 1                    ; Compare length with 1, 1 if same, 0 if different
-
-    btfss STATUS, 2, A            ; 1 if different, 0 if same, skip if different
-
-    goto Check_Length_1        ; Go to length-1 patterns
-
-    movf Length, W, A          ; Get the length of the input pattern
-
-    andlw 2                    ; Compare length with 2, 1 if same, 0 if different
-
-    btfss STATUS, 2, A            ; 1 if different, 0 if same, skip if different
-
-    goto Check_Length_2        ; Go to length-2 patterns
+    movf INDF1, W, A         ; Load a byte from Pattern
+    xorwf INDF2, W, A        ; Compare it with the table pattern, 0 if same
+    btfsc STATUS, 2, A       ; Skip if bytes dismatch (Z clear)
+    goto Next_Pattern_Byte   ; If not matched, skip to the next pattern byte
+    goto Next_Entry          ; If mismatch, move to the next entry
  
-    movf Length, W, A          ; Compare length with 3
-
-    andlw 3
-
-    btfss STATUS, 2, A            ; If length == 3
-
-    goto Check_Length_3        ; Go to length-3 patterns
+Next_Pattern_Byte:
+    incf FSR2, F, A          ; Move to the next table pattern byte
+    incf FSR1, F, A          ; Move to the next input pattern byte
+    decfsz tem_length, F, A  ; Decrement file register, skip if zero
+    goto Compare_Pattern     ; Loop until all bytes are compared
  
-    movf Length, W, A          ; Compare length with 4
-
-    andlw 4
-
-    btfss STATUS, 2, A            ; If length == 4
-
-    goto Check_Length_4        ; Go to length-4 patterns
-    
-    movf Length, W, A
-    
-    andlw 5                    ; Compare with 5
-
-    btfss STATUS, 2, A            ; If length == 5
-
-    goto Check_Length_5        ; Go to length-5 patterns
+    ; Match found, output the character
+    incf FSR2, F, A          ; Move to the ASCII character in the table
+    movf INDF2, W, A         ; Load the ASCII character
+    call Display_Result      ; Call the subroutine to display the result
+    return                   ; Return after successful decoding
  
-    movlw '?'                   
-    call LCD_Send_Byte_D        ; Written into LCD
-    clrf Decoded_Char, A       ; If no match, clear decoded character
-
-    return                     ; Return no match
-
-Check_Length_1:
-
-    movlw Pattern              ; Load Pattern base address
-
-    movwf FSR0, A              ; Set FSR0 to point to Pattern
+Next_Entry:
+    addlw 3                  ; Move to the next table entry (Length, Pattern, ASCII)
+    movlw LookupTable_End    ; Check if at the end of the table
+    subwf FSR2, W, A
+    btfsc STATUS, 2, A       ; If FSR0 == LookupTable_End, reached the end of the table
+    goto Decode_Failed       ; Go to decode failure logic if end of table is reached
+    goto Decode_Loop         ; Check the next entry
  
-    movlw "."                 ; Check if the pattern is E "."
-
-    call Compare_Full_Pattern
-
-    btfsc STATUS, 2, A            ; If matched
-
-    goto Match_E               ; Decode as 'A'
+Decode_Failed:
+    movlw '?'                ; Load '?' into WREG
+    call Display_Result      ; Display '?' on the LCD
+    return                   ; Return to the caller
  
-    movlw "-"                 ; Check if the pattern is T "-"
-
-    call Compare_Full_Pattern
-
-    btfsc STATUS, 2, A            ; If matched
-
-    goto Match_T               ; Decode as 'N'
-    
-    movlw '?'                   
-    call LCD_Send_Byte_D        ; Written into LCD
-    clrf Decoded_Char, A       ; If no match, clear decoded character
-
-    return
- 
-Check_Length_2:
-
-    movlw Pattern              ; Load Pattern base address
-
-    movwf FSR0, A              ; Set FSR0 to point to Pattern
- 
-    movlw ".-"                 ; Check if the pattern is A ".-"
-    call Compare_Full_Pattern
-    btfsc STATUS, 2            ; If matched
-    goto Match_A               ; Decode as 'A'
-    
-    movlw ".."                 ; Check if the pattern is I ".."
-    call Compare_Full_Pattern
-    btfsc STATUS, 2            ; If matched
-    goto Match_I               ; Decode as 'I'
-    
-    movlw "-."                 ; Check if the pattern is "-."
-    call Compare_Full_Pattern
-    btfsc STATUS, 2            ; If matched
-    goto Match_N               ; Decode as 'N'
-    
-    movlw "--"                 ; Check if the pattern is "--"
-    call Compare_Full_Pattern
-    btfsc STATUS, 2            ; If matched
-    goto Match_M               ; Decode as 'M'
-    
-    movlw '?'                   
-    call LCD_Send_Byte_D        ; Written into LCD
-    clrf Decoded_Char, A       ; If no match, clear decoded character
-
-    return
-    
- 
-Check_Length_3:
-
-    movlw Pattern              ; Load Pattern base address
-
-    movwf FSR0, A              ; Set FSR0 to point to Pattern
- 
-    movlw "-.."                ; Check if the pattern is "-.."
-
-    call Compare_Full_Pattern
-
-    btfsc STATUS, Z            ; If matched
-
-    goto Match_D               ; Decode as 'D'
- 
-    movlw "..."                ; Check if the pattern is "..."
-
-    call Compare_Full_Pattern
-
-    btfsc STATUS, Z            ; If matched
-
-    goto Match_S               ; Decode as 'S'
- 
-    clrf Decoded_Char, A       ; If no match, clear decoded character
-
-    return
-    
- 
-Check_Length_4:
-
-    movlw Pattern              ; Load Pattern base address
-
-    movwf FSR0, A              ; Set FSR0 to point to Pattern
- 
-    movlw "--.-"               ; Check if the pattern is "--.-"
-
-    call Compare_Full_Pattern
-
-    btfsc STATUS, Z            ; If matched
-
-    goto Match_Q               ; Decode as 'Q'
- 
-    movlw "-..."               ; Check if the pattern is "-..."
-
-    call Compare_Full_Pattern
-
-    btfsc STATUS, Z            ; If matched
-
-    goto Match_B               ; Decode as 'B'
- 
-    clrf Decoded_Char, A       ; If no match, clear decoded character
-
-    return
-    
-    
- 
-Check_Length_5:
-
-    movlw Pattern              ; Load Pattern base address
-
-    movwf FSR0, A              ; Set FSR0 to point to Pattern
- 
-    movlw "--.-"               ; Check if the pattern is "--.-"
-
-    call Compare_Full_Pattern
-
-    btfsc STATUS, Z            ; If matched
-
-    goto Match_Q               ; Decode as 'Q'
- 
-    movlw "-..."               ; Check if the pattern is "-..."
-
-    call Compare_Full_Pattern
-
-    btfsc STATUS, Z            ; If matched
-
-    goto Match_B               ; Decode as 'B'
- 
-    clrf Decoded_Char, A       ; If no match, clear decoded character
-
-    return
- 
-Match_A:
-
-    movlw 'A'                  ; Decoded as 'A'
-
-    movwf Decoded_Char, A
-
-    return
- 
-Match_N:
-
-    movlw 'N'                  ; Decoded as 'N'
-
-    movwf Decoded_Char, A
-
-    return
-
-
- 
-Match_D:
-
-    movlw 'D'                  ; Decoded as 'D'
-
-    movwf Decoded_Char, A
-
-    return
- 
-Match_S:
-
-    movlw 'S'                  ; Decoded as 'S'
-
-    movwf Decoded_Char, A
-
-    return
-
-
- 
-Match_Q:
-
-    movlw 'Q'                  ; Decoded as 'Q'
-
-    movwf Decoded_Char, A
-
-    return
- 
-Match_B:
-
-    movlw 'B'                  ; Decoded as 'B'
-
-    movwf Decoded_Char, A
-
-    return
-
-Match_I:
-
-    movlw 'I'                  ; Decoded as 'B'
-
-    movwf Decoded_Char, A
-
-    return
-    
-Match_M:
-
-    movlw 'M'                  ; Decoded as 'B'
-
-    movwf Decoded_Char, A
-
-    return
-    
-Match_T:
-
-    movlw 'T'                  ; Decoded as 'B'
-
-    movwf Decoded_Char, A
-
-    return
-    
-Match_E:
-
-    movlw 'E'                  ; Decoded as 'B'
-    
-    call LCD_Send_Byte_D
-
-    movwf Decoded_Char, A
-
-    return
- 
-Compare_Full_Pattern:
-
-    movwf TEMP_PTR             ; Store the address of the target pattern
-
-    movf Length, W, A          ; Load the length of the input pattern
-
-    movwf TEMP_REG, A          ; Store it in TEMP_REG
- 
-Compare_Loop:
-
-    movf POSTINC0, W, A        ; Get the next character from input Pattern
-
-    subwf POSTINC1, W, A       ; Compare with target Pattern
-
-    btfss STATUS, Z            ; If not matched
-
-    return                     ; Return no match
-
-    decfsz TEMP_REG, F, A      ; Decrement remaining length
-
-    goto Compare_Loop          ; Continue comparison
- 
-    return                     ; If all characters match, return match
-
- 
-    
-    
+; Subroutine to display the result on LCD
+Display_Result:
+    call LCD_Send_Byte_D     ; Send WREG (ASCII character) to the LCD
+    return                   ; Return to the caller
 
