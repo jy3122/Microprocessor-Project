@@ -151,7 +151,7 @@ Write_Dot:
     movwf FSR0, A              ; file select register
     movf Length, W, A          ; current length
     addwf FSR0, F, A           ; calculate target position Pattern + Length
-    movlw '0'                  ; load '.'
+    movlw 0x01                  ; load '.'
     movwf INDF0, A             ; Indirect file register,load '.' to current position
     incf Length, F, A          ; increment length
     return
@@ -166,7 +166,7 @@ Write_Dash:
     movwf FSR0, A              ; file select register
     movf Length, W, A          ; current length
     addwf FSR0, F, A           ; calculate target position?Pattern + Length?
-    movlw '1'                  ; load '.'
+    movlw 0x02                  ; load '.'
     movwf INDF0, A             ; Indirect file register,load '.' to current position
     incf Length, F, A          ; increment length
     return
