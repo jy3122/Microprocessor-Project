@@ -1,69 +1,66 @@
 #include <xc.inc>
 global Decode_Morse, Display_Result
-extrn LCD_Send_Byte_D,LookupTable, Pattern, Length,LookupTable_End
-    
-    
+extrn LCD_Send_Byte_D, LookupTable, LookupTable_End,Pattern, Length
+ 
 psect udata_acs
-tem_length: ds 1 
+tem_length: ds 1         ; Temporary storage for input Pattern length
+bit_count:  ds 1         ; Temporary storage for remaining bytes to compare
  
- 
-
 psect morse_decoder, class=CODE
-
+ 
 ; Decodes the Morse code stored in Pattern
 Decode_Morse:
-    movlw LookupTable        ; Load base address of LookupTable
-    movwf FSR2, A            ; Set FSR0 to LookupTable
+    movlw LookupTable        ; Load the starting address of the LookupTable
+    movwf FSR2, A            ; Set FSR2 to point to the LookupTable
     goto Decode_Loop
- 
 Decode_Loop:
     ; Compare Length
-    movf Length, W, A        ; Load the length of the current Morse code input
-    movwf tem_length, A      
-    subwf INDF2, W, A        ; Compare with the first byte of the table entry (length)
-    btfss STATUS, 2, A       ; Skip if the lengths are equal (Z flag is set)
-    goto Next_Entry          ; If not equal, check the next entry
+    movf Length, W, A        ; Load the length of the input Morse code
+    movwf tem_length, A      ; Store it in tem_length
+    subwf INDF2, W, A        ; Compare it with the Length of the current table entry
+    btfss STATUS, 2, A       ; Skip if the lengths match (Z flag is set)
+    goto Next_Entry          ; If lengths don't match, jump to the next entry
  
     ; Compare Pattern
-    incf FSR2, F, A          ; Point to the Morse code pattern in the table
-    movlw Pattern            ; Load address of Pattern
-    movwf FSR1, A            ; Set FSR1 to Pattern
+    incf FSR2, F, A          ; Move to the start of the Pattern in the current entry
+    movlw Pattern            ; Load the starting address of the input Pattern
+    movwf FSR1, A            ; Set FSR1 to point to the input Pattern
+    movf tem_length, W, A    ; Load the number of bytes to compare
+    movwf bit_count, A       ; Store it in bit_count
     goto Compare_Pattern
  
 Compare_Pattern:
-    movf INDF1, W, A         ; Load a byte from Pattern
-    xorwf INDF2, W, A        ; Compare it with the table pattern, 0 if same
-    btfsc STATUS, 2, A       ; Skip if bytes dismatch (Z clear)
-    goto Next_Pattern_Byte   ; If not matched, skip to the next pattern byte
-    goto Next_Entry          ; If mismatch, move to the next entry
+    movf INDF1, W, A         ; Load the current byte from the input Pattern
+    xorwf INDF2, W, A        ; Compare it with the current byte from the table Pattern
+    btfsc STATUS, 2, A       ; If bytes match, skip the next instruction
+    goto Next_Entry          ; If bytes don't match, jump to the next entry
+    incf FSR1, F, A          ; Move the input Pattern pointer to the next byte
+    incf FSR2, F, A          ; Move the table Pattern pointer to the next byte
+    decfsz bit_count, F, A   ; Decrease bit_count, check if all bytes are compared
+    goto Compare_Pattern     ; If not finished, continue comparing
  
-Next_Pattern_Byte:
-    incf FSR2, F, A          ; Move to the next table pattern byte
-    incf FSR1, F, A          ; Move to the next input pattern byte
-    decfsz tem_length, F, A  ; Decrement file register, skip if zero
-    goto Compare_Pattern     ; Loop until all bytes are compared
- 
-    ; Match found, output the character
-    incf FSR2, F, A          ; Move to the ASCII character in the table
-    movf INDF2, W, A         ; Load the ASCII character
+    ; Match found, display the character
+    movf INDF2, W, A         ; Load the ASCII character from the table entry
     call Display_Result      ; Call the subroutine to display the result
     return                   ; Return after successful decoding
  
 Next_Entry:
-    addlw 3                  ; Move to the next table entry (Length, Pattern, ASCII)
-    movlw LookupTable_End    ; Check if at the end of the table
-    subwf FSR2, W, A
-    btfsc STATUS, 2, A       ; If FSR0 == LookupTable_End, reached the end of the table
-    goto Decode_Failed       ; Go to decode failure logic if end of table is reached
-    goto Decode_Loop         ; Check the next entry
+    ; Calculate the total length of the current entry and jump to the next one
+    movf INDF2, W, A         ; Load Length (first byte) of the current entry
+    addlw 1                  ; Add 1 for the ASCII character length
+    addwf FSR2, F, A         ; Move the pointer to the start of the next entry
+    movlw LookupTable_End    ; Load the end address of the LookupTable
+    subwf FSR2, W, A         ; Check if the pointer has reached the end of the table
+    btfsc STATUS, 2, A       ; If at the end (Z = 1), jump to Decode_Failed
+    goto Decode_Failed       ; Display '?' if decoding fails
+    goto Decode_Loop         ; Otherwise, continue decoding
  
 Decode_Failed:
     movlw '?'                ; Load '?' into WREG
     call Display_Result      ; Display '?' on the LCD
     return                   ; Return to the caller
  
-; Subroutine to display the result on LCD
+; Subroutine to display the result
 Display_Result:
-    call LCD_Send_Byte_D     ; Send WREG (ASCII character) to the LCD
+    call LCD_Send_Byte_D     ; Send the ASCII character in WREG to the LCD
     return                   ; Return to the caller
-
