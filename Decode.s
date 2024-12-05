@@ -1,5 +1,5 @@
 #include <xc.inc>
-global Decode_Morse, Display_Result
+global Decode_Morse, Display_Result,Setup_Morse
 extrn LCD_Send_Byte_D, LookupTable, LookupTable_End,Pattern, Length
  
 psect udata_acs
@@ -9,10 +9,21 @@ bit_count:  ds 1         ; Temporary storage for remaining bytes to compare
 psect morse_decoder, class=CODE
  
 ; Decodes the Morse code stored in Pattern
+Setup_Morse:
+    clrf FSR0
+    clrf FSR1
+    clrf tem_length, A
+    clrf bit_count, A
+    return
+    
 Decode_Morse:
+    movlw Pattern            ; Load the starting address of the input Pattern
+    movwf FSR1, A            ; Set FSR1 to point to the input Pattern     
     movlw LookupTable        ; Load the starting address of the LookupTable
     movwf FSR0, A            ; Set FSR2 to point to the LookupTable
     goto Decode_Loop
+    
+    
 Decode_Loop:
     ; Compare Length
     movf Length, W, A        ; Load the length of the input Morse code
@@ -23,8 +34,6 @@ Decode_Loop:
  
     ; Compare Pattern
     incf FSR0, F, A          ; Move to the start of the Pattern in the current entry
-    movlw Pattern            ; Load the starting address of the input Pattern
-    movwf FSR1, A            ; Set FSR1 to point to the input Pattern
     movf tem_length, W, A    ; Load the number of bytes to compare
     movwf bit_count, A       ; Store it in bit_count
     goto Compare_Pattern
@@ -36,7 +45,7 @@ Compare_Pattern:
     goto Next_Entry          ; If bytes don't match, jump to the next entry
     incf FSR1, F, A          ; Move the input Pattern pointer to the next byte
     incf FSR0, F, A          ; Move the table Pattern pointer to the next byte
-    decfsz bit_count, F, A   ; Decrease bit_count, check if all bytes are compared
+    decfsz bit_count, F, A   ; Decrease bit_count, check if all bytes are compared, decrement file register, skip if zero
     goto Compare_Pattern     ; If not finished, continue comparing
  
     ; Match found, display the character
@@ -56,7 +65,7 @@ Next_Entry:
     goto Decode_Loop         ; Otherwise, continue decoding
  
 Decode_Failed:
-    movlw '?'                ; Load '?' into WREG
+    movlw '&'              ; Load '?' into WREG
     call Display_Result      ; Display '?' on the LCD
     return                   ; Return to the caller
  
