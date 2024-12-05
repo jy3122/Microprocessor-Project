@@ -1,14 +1,25 @@
 #include <xc.inc>
-global LookupTable, LookupTable_End,Pattern, Length
-psect    udata
-;org 0x20
-Pattern:
-    db 0x01,0x02
-Length:
-    db 2
+global LookupTable, LookupTable_End,Pattern, Length1,Move2
+extrn LCD_Write_Hex
     
-psect   udata
-org 0x50
+    
+psect    udata
+
+Pattern:ds 2
+    db 0x01,0x02
+    
+;Length1: ds 1
+Length1: ds 1
+    
+    
+;psect   table_code, class=CODE
+;movlw 0x02
+;call LCD_Write_Hex
+;movwf Length1,A
+
+    
+
+
 LookupTable:
     ; Letters
     DB 2, 0x01, 0x02, 'A'      ; A: .-
@@ -52,6 +63,11 @@ LookupTable:
  
     ;DB 0x00                       ; End of LookupTable marker
 LookupTable_End: 
+    
+psect table_code, class=CODE
 
-
+Move2:
+    movlw 0x02
+    movwf Length1, A
+    return
 
