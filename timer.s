@@ -45,6 +45,8 @@ Setup_Timer:
     
     ; Configure RJ0 as input
     bsf TRISJ, 0,A        ; Set RJ0 (PORTJ, bit 0) as input
+    
+
     clrf    TRISD,A
     return
  
