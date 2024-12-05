@@ -1,6 +1,6 @@
 #include <xc.inc>
 global Decode_Morse, Display_Result,Setup_Morse
-extrn LCD_Send_Byte_D, LookupTable, LookupTable_End,Pattern, Length
+extrn LCD_Send_Byte_D, LookupTable, LookupTable_End,Pattern, Length1, LCD_Write_Hex
  
 psect udata_acs
 tem_length: ds 1         ; Temporary storage for input Pattern length
@@ -10,8 +10,10 @@ psect morse_decoder, class=CODE
  
 ; Decodes the Morse code stored in Pattern
 Setup_Morse:
-    clrf FSR0
-    clrf FSR1
+    clrf FSR0, A
+    clrf FSR1, A
+    clrf INDF0, A
+    clrf INDF1, A
     clrf tem_length, A
     clrf bit_count, A
     return
@@ -19,6 +21,10 @@ Setup_Morse:
 Decode_Morse:
     movlw Pattern            ; Load the starting address of the input Pattern
     movwf FSR1, A            ; Set FSR1 to point to the input Pattern     
+    
+   ; movf FSR1, W, A
+    ;call LCD_Write_Hex
+    
     movlw LookupTable        ; Load the starting address of the LookupTable
     movwf FSR0, A            ; Set FSR2 to point to the LookupTable
     goto Decode_Loop
@@ -26,8 +32,12 @@ Decode_Morse:
     
 Decode_Loop:
     ; Compare Length
-    movf Length, W, A        ; Load the length of the input Morse code
+    movf Length1, W, A        ; Load the length of the input Morse code
+    call LCD_Write_Hex
+    
     movwf tem_length, A      ; Store it in tem_length
+    
+    
     subwf INDF0, W, A        ; Compare it with the Length of the current table entry
     btfss STATUS, 2, A       ; Skip if the lengths match (Z flag is set)
     goto Next_Entry          ; If lengths don't match, jump to the next entry
@@ -65,7 +75,7 @@ Next_Entry:
     goto Decode_Loop         ; Otherwise, continue decoding
  
 Decode_Failed:
-    movlw '&'              ; Load '?' into WREG
+    movlw '?'              ; Load '?' into WREG
     call Display_Result      ; Display '?' on the LCD
     return                   ; Return to the caller
  
