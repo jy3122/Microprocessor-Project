@@ -1,20 +1,10 @@
 #include <xc.inc>
-; Declare external subroutines
-;extrn    Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIMER0_ISR,Check_Overflow
-;extrn    Elapsed_Time_L,Elapsed_Time_M,Elapsed_Time_H
 extrn    LCD_Setup, LCD_Write_Message,LCD_Write_Hex, LCD_Send_Byte_D,LCD_Clear
-extrn    Decode_Morse,Setup_Morse
-extrn Pattern, Length, LookupTable
-extrn Write_Dash, Write_Dot
-;extrn    Keypad_Setup, find_column, find_row, combine, find_key
-; Data section for storing variables in access RAM
+extrn LookupTable
+
     
+; Define variables
 
-psect    udata  
-delay_count: ds 1      ; Variable for delay routine counter
-  
-
-   
 psect	code,abs
 
 rst: org 0x0000
@@ -24,39 +14,47 @@ Setup:
     call LCD_Setup
     call LCD_Clear
     call Setup_Morse
-    goto Start_Test
-     
+    goto Decode_Morse
 
- 
-Start_Test:
-    clrf Length,A
-    clrf Pattern,A
-    call Write_Dash
-    call Write_Dot
-    ;movlw LOW Pattern
-;    movlw LOW Length1
-    ;movlw 0x05
-    ;movwf Length1
-    ;call Move2
-    ;movf Length1, W
-   ; clrf PORTJ
-    ;movwf PORTJ,A
-    ;movlw LOW LookupTable
-    ;movf Pattern
-    ;call LCD_Write_Hex
-  
-    call Decode_Morse
- 
     
+Setup_Morse:
+    bcf CFGS
+    bsf EEPGD
+    clrf FSR1, A                ; Clear FSR1
+    clrf INDF1, A 
+    clrf TBLPTRH,A
+    clrf TBLPTRH,A
+    clrf TBLPTRL,A
+    clrf TABLAT, A
+    return
+ 
+
+Decode_Morse:
+    ; Set table pointer to LookupTable
+    movlw low highword(LookupTable)
+    movwf TBLPTRU, A
+    movlw high(LookupTable)
+    ;call LCD_Write_Hex
+    movwf TBLPTRH,A
+    ;movf TBLPTRH,W
+    ;call LCD_Write_Hex
+    movlw low(LookupTable)
+    ;call LCD_Write_Hex
+
+    movwf TBLPTRL,A
+    ;movf TBLPTRL,W
+    ;call LCD_Write_Hex
+    goto Decode_Loop
+ 
+Decode_Loop:
+    ; Read the length of the current table entry
+    tblrd*                      ; Read the length byte from TBLPTR
+    movf TABLAT, W, A           ; Store the length in W
+    call LCD_Write_Hex
+
 
 Loop:
 
     bra Loop                
 
-      
-; Delay subroutine
-delay:
-    decfsz delay_count, A ; Decrement the delay counter until zero
-    bra delay             ; Loop until counter is zero
-    return                ; Return from delay subroutine
-    end rst
+ 
