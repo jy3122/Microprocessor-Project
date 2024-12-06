@@ -6,7 +6,7 @@ extrn LCD_Write_Hex
     
 psect    udata_acs
 
-Pattern:ds 2
+Pattern:ds 8
    
 Length: ds 1
     
@@ -18,13 +18,13 @@ LookupTable:
     ; Letters
     DB 0x02, 0x01, 0x02, 'A'      ; A: .-
     DB 0x04, 0x02, 0x01, 0x01, 0x01, 'B' ; B: -...
-    DB 4, 0x02, 0x01, 0x02, 0x01, 'C' ; C: -.-.
+    DB 0x04, 0x02, 0x01, 0x02, 0x01, 'C' ; C: -.-.
     DB 3, 0x02, 0x01, 0x01, 'D' ; D: -..
     DB 1, 0x01, 'E'             ; E: .
     DB 4, 0x01, 0x01, 0x02, 0x01, 'F' ; F: ..-.
     DB 3, 0x02, 0x02, 0x01, 'G' ; G: --.
     DB 4, 0x01, 0x01, 0x01, 0x01, 'H' ; H: ....
-    DB 2, 0x01, 0x01, 'I'       ; I: ..
+    DB 0x02, 0x01, 0x01, 'I'       ; I: ..
     DB 4, 0x01, 0x02, 0x02, 0x02, 'J' ; J: .---
     DB 3, 0x02, 0x01, 0x02, 'K' ; K: -.-
     DB 4, 0x01, 0x02, 0x01, 0x01, 'L' ; L: .-..
@@ -59,30 +59,74 @@ LookupTable:
 
 psect table_code, class=CODE
 
-
+    
+    
+    
 Write_Dot:
-    clrf FSR0,A
-    clrf INDF0,A
-    movlw Pattern              ; load initial address of pattern
-    movwf FSR0, A              ; file select register
-    movf Length, W, A          ; current length
-    addwf FSR0, F, A           ; calculate target position Pattern + Length
-    movlw 0x01                  ; load '.'
-    movwf INDF0, A             ; Indirect file register,load '.' to current position
-    incf Length, F, A          ; increment length
-    return
+
+    ; Load initial address of Pattern into FSR0
+    clrf FSR0
     
+    movlw low(Pattern)
+
+    movwf FSR0L, A             ; Load low byte of Pattern address
+
+    movlw high(Pattern)
+
+    movwf FSR0H, A             ; Load high byte of Pattern address
+ 
+    ; Add Length to calculate the current position in RAM
+
+    movf Length, W, A          ; Get current Length
+
+    addwf FSR0L, F, A          ; Add Length to low byte of FSR0
+
+    btfsc STATUS, 0            ; Handle carry to high byte
+
+    incf FSR0H, F, A
+ 
+    ; Write '.' to the calculated position
+
+    movlw 0x01                 ; Symbol for '.'
+
+    movwf INDF0, A             ; Write symbol
+
+    incf Length, F, A          ; Increment Length for next write
     
-    
-Write_Dash:
-    clrf FSR0,A
-    clrf INDF0,A
-    movlw Pattern              ; load initial address of pattern
-    movwf FSR0, A              ; file select register
-    movf Length, W, A          ; current length
-    addwf FSR0, F, A           ; calculate target position?Pattern + Length?
-    movlw 0x02                  ; load '.'
-    movwf INDF0, A             ; Indirect file register,load '.' to current position
-    incf Length, F, A          ; increment length
     return
 
+ 
+Write_Dash:
+
+    ; Load initial address of Pattern into FSR0
+    clrf FSR0
+
+    movlw low(Pattern)
+
+    movwf FSR0L, A             ; Load low byte of Pattern address
+
+    movlw high(Pattern)
+
+    movwf FSR0H, A             ; Load high byte of Pattern address
+ 
+    ; Add Length to calculate the current position in RAM
+
+    movf Length, W, A          ; Get current Length
+
+    addwf FSR0L, F, A          ; Add Length to low byte of FSR0
+
+    btfsc STATUS, 0            ; Handle carry to high byte
+
+    incf FSR0H, F, A
+ 
+    ; Write '-' to the calculated position
+
+    movlw 0x02                 ; Symbol for '-'
+
+    movwf INDF0, A             ; Write symbol
+
+    incf Length, F, A          ; Increment Length for next write
+
+    return
+
+ 
