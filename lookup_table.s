@@ -1,16 +1,5 @@
 #include <xc.inc>
-global Length, Pattern   , LookupTable
-global Write_Dash, Write_Dot
-extrn LCD_Write_Hex
-    
-    
-psect    udata_acs
-
-Pattern:ds 2
-   
-Length: ds 1
-    
-
+global LookupTable
 psect    data
 
 
@@ -56,33 +45,4 @@ LookupTable:
     DB 5, 0x02, 0x02, 0x02, 0x02, 0x02, '0' ; 0: -----
  
     DB 0x06                       ; End of LookupTable marker
-
-psect table_code, class=CODE
-
-
-Write_Dot:
-    clrf FSR0,A
-    clrf INDF0,A
-    movlw Pattern              ; load initial address of pattern
-    movwf FSR0, A              ; file select register
-    movf Length, W, A          ; current length
-    addwf FSR0, F, A           ; calculate target position Pattern + Length
-    movlw 0x01                  ; load '.'
-    movwf INDF0, A             ; Indirect file register,load '.' to current position
-    incf Length, F, A          ; increment length
-    return
-    
-    
-    
-Write_Dash:
-    clrf FSR0,A
-    clrf INDF0,A
-    movlw Pattern              ; load initial address of pattern
-    movwf FSR0, A              ; file select register
-    movf Length, W, A          ; current length
-    addwf FSR0, F, A           ; calculate target position?Pattern + Length?
-    movlw 0x02                  ; load '.'
-    movwf INDF0, A             ; Indirect file register,load '.' to current position
-    incf Length, F, A          ; increment length
-    return
 
