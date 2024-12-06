@@ -12,6 +12,7 @@ extrn Write_Dash, Write_Dot
 
 psect    udata  
 delay_count: ds 1      ; Variable for delay routine counter
+Counter:ds 1
   
 
    
@@ -31,17 +32,25 @@ Setup:
 Start_Test:
     clrf Length,A
     clrf Pattern,A
+    
+    ;call Write_Dash
+    ;call Write_Dash
     call Write_Dash
     call Write_Dot
-    ;movlw LOW Pattern
-;    movlw LOW Length1
-    ;movlw 0x05
-    ;movwf Length1
-    ;call Move2
-    ;movf Length1, W
-   ; clrf PORTJ
+    ;call Write_Dash
+    call Write_Dot
+    call Write_Dot
+    ;call Write_Dot
+    ;call Write_Dash
+    ;call Write_Dash
+    ;call Write_Dash
+    ;call Write_Dash
+
+
+    ;movf Length, W
+    ;clrf PORTJ
     ;movwf PORTJ,A
-    ;movlw LOW LookupTable
+    ;call Print_Pattern
     ;movf Pattern
     ;call LCD_Write_Hex
   
@@ -59,4 +68,32 @@ delay:
     decfsz delay_count, A ; Decrement the delay counter until zero
     bra delay             ; Loop until counter is zero
     return                ; Return from delay subroutine
+    
+Print_Pattern:
+    movlw HIGH Pattern         ; Load high byte of Pattern address
+    movwf FSR1H, A             ; Set FSR1 high byte
+    movlw LOW Pattern          ; Load low byte of Pattern address
+    movwf FSR1L, A             ; Set FSR1 low byte
+ 
+    clrf Counter, A            ; Initialize Counter to 0
+    goto Print_Loop
+ 
+Print_Loop:
+    movf Counter, W, A         ; Load Counter into W
+    subwf Length, W, A         ; Compare Counter with Length
+    btfsc STATUS, 2, A            ; If Counter == Length, exit loop
+    goto Print_End
+ 
+    movf INDF1, W, A           ; Load current byte of Pattern
+    call LCD_Write_Hex         ; Print current byte to LCD
+ 
+    incf FSR1L, F, A           ; Move FSR1 to next byte
+    btfsc STATUS, 0, A         ; If carry, increment FSR1H
+    incf FSR1H, F, A
+ 
+    incf Counter, F, A         ; Increment Counter
+    goto Print_Loop            ; Repeat loop
+ 
+Print_End:
+    return 
     end rst
