@@ -1,7 +1,6 @@
 #include <xc.inc>
  
 global  Keypad_Setup, find_column, find_row, combine, find_key
-extrn Decode_Morse
  
 psect   udata_acs
 column:     ds 1
@@ -50,20 +49,28 @@ nextD:
     movlw   01001000B       ; Binary pattern for 'D'
     cpfseq  result, A       ;Compare file register skip if equal
     bra     nextC
-    call    Decode_Morse
-    return
+    retlw 'D'
  
 
 nextC:
     movlw   10001000B       ; Binary pattern for 'C' 
     cpfseq  result, A
-    goto find_key
+    goto    nextnobu
     retlw   'C'        ; Return ASCII 'C'
+    
+    
+nextnobu:
+    retlw ' '
 
+ 
 delay:
     decfsz delay_count, A ; Decrement the delay counter until zero
     bra delay             ; Loop until counter is zero
     return                ; Return from delay subroutine
+
+
+
+
 
 
 
