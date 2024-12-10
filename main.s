@@ -11,6 +11,7 @@ extrn    Keypad_Setup, find_column, find_row, combine, find_key
 psect    udata  
 delay_count: ds 1      ; Variable for delay routine counter
 Counter:ds 1
+key: ds 1
   
 
    
@@ -19,6 +20,8 @@ psect	code,abs
 rst: org 0x0000
      goto Setup
      
+interrupt: org 0x0008          ; High-priority interrupt vector
+           goto TIMER0_ISR     ; Jump to Timer0 interrupt service routine
 Setup:
     call Setup_Timer
     call LCD_Setup
@@ -34,15 +37,31 @@ Start_Test:
     call Start_Timer
     call Button_Released
     call Check_Overflow
-    ;call find_column
-    ;call find_row
-   ; call combine 
-    ;call find_key
-    ;sublw 'D'
-    ;btfsc ZERO
-    ;call Decode_Morse
+    call find_column
+    call find_row
+    call combine 
+    call find_key
+    movwf key, A
+    movf key, W, A
+    sublw 'D'
+    btfss ZERO          ;skip next line if D is pressed
+    goto check_C
+    goto handle_D
+    
+handle_D:
+    call Decode_Morse
     goto Start_Test
-  
+    
+check_C:
+    movf key, W, A
+    sublw 'C'
+    btfss ZERO
+    goto Start_Test
+    goto handle_C
+    
+handle_C:
+    goto Setup
+    
  
    
       
