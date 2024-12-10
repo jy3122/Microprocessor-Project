@@ -1,12 +1,11 @@
 #include <xc.inc>
 ; Declare external subroutines
-;extrn    Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIMER0_ISR,Check_Overflow
+extrn    Setup_Timer, Button_Pressed,Start_Timer,Button_Released,Process_Timer,TIMER0_ISR,Check_Overflow
 ;extrn    Elapsed_Time_L,Elapsed_Time_M,Elapsed_Time_H
 extrn    LCD_Setup, LCD_Write_Message,LCD_Write_Hex, LCD_Send_Byte_D,LCD_Clear
 extrn    Decode_Morse,Setup_Morse
 extrn Pattern, Length, LookupTable
-extrn Write_Dash, Write_Dot
-;extrn    Keypad_Setup, find_column, find_row, combine, find_key
+extrn    Keypad_Setup, find_column, find_row, combine, find_key
 ; Data section for storing variables in access RAM
     
 
@@ -22,9 +21,11 @@ rst: org 0x0000
      goto Setup
      
 Setup:
+    call Setup_Timer
     call LCD_Setup
     call LCD_Clear
     call Setup_Morse
+    call Keypad_Setup
     goto Start_Test
      
 
@@ -32,30 +33,15 @@ Setup:
 Start_Test:
     clrf Length,A
     call Clear_Pattern
-    
-    ;call Write_Dash
-    ;call Write_Dash
-    ;call Write_Dash
-    call Write_Dot
-    call Write_Dash
-    call Write_Dot
-    ;call Write_Dot
-    ;call Write_Dot
-    ;call Write_Dash
-    ;call Write_Dash
-    call Write_Dash
-    ;call Write_Dash
-    ;call Write_Dot
-
-
-    ;movf Length, W
-    ;clrf PORTJ
-    ;movwf PORTJ,A
-    ;call Print_Pattern
-    ;movf Pattern
-    ;call LCD_Write_Hex
+    call Button_Pressed
+    call Start_Timer
+    call Button_Released
+    call Check_Overflow
+    call find_column
+    call find_row
+    call combine 
+    call find_key
   
-    call Decode_Morse
  
     
 
