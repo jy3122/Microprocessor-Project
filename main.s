@@ -32,16 +32,20 @@ Setup:
      
 Start_Test:
     clrf Length,A
+    clrf PORTH, A
     call Clear_Pattern
     call Button_Pressed
     call Start_Timer
     call Button_Released
     call Check_Overflow
-    call find_column
-    call find_row
-    call combine 
-    call find_key
-    movwf key, A
+    ;call find_column
+    ;call find_row
+    ;call combine 
+    ;call find_key
+    ;movwf key, A
+    goto check_RH2
+    
+check_D:    
     movf key, W, A
     sublw 'D'
     btfss ZERO          ;skip next line if D is pressed
@@ -62,7 +66,23 @@ check_C:
 handle_C:
     goto Setup
     
- 
+   
+check_RH2:    
+    btfss PORTH,2,A          ;skip next line if D is pressed
+    goto check_RH3
+    goto handle_RH2
+    
+handle_RH2:
+    call Decode_Morse
+    goto Start_Test
+    
+check_RH3:
+    btfss PORTH,3, A
+    goto Start_Test
+    goto handle_RH3
+    
+handle_RH3:
+    goto Setup 
    
       
 ; Delay subroutine
