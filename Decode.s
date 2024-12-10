@@ -45,8 +45,6 @@ Decode_Loop:
     movwf tem_length, A         ; Save it to tem_length
     movwf bit_count, A          ; Initialize bit_count with the same value
     ; Compare lengths
-    ;movf Length, W, A          ; Load the length of the input pattern
-    ;call LCD_Write_Hex
     movf Length, W, A          ; Load the length of the input pattern
     subwf tem_length, W, A      ; Compare input pattern length with table entry length
     btfss ZERO          ; If lengths do not match, go to the next entry (Z=1 when sub=0, match)
@@ -75,39 +73,12 @@ Compare_Pattern:
     decfsz bit_count, F, A
     goto Compare_Pattern 
     ;incf FSR1, F, A             ; Increment input pattern pointer
-
- 
-    ;goto Compare_Pattern        ; If not finished, continue comparing
+    
     ; Match found
     tblrd*                     ; Read the ASCII character from the table entry
     movf TABLAT, W, A           ; Load the ASCII character into WREG
     call Display_Result         ; Display the result
     return    
-    
-;Compare_Pattern:
-;    tblrd*+                     ; Read the current byte of the table pattern into TABLAT
-;    ;movf TABLAT,W,A
-;    ;call LCD_Write_Hex
-;    lfsr 1, Pattern
-;    movf POSTINC1, W, A 
-;    xorwf TABLAT, W, A          ; Compare the input pattern byte with the table byte, same if 0, not same if 1
-;
-;    btfss ZERO          ; If bytes do not match, go to the next entry (Z=1 when xor=0, i.e. same pattern)
-;    goto Next_Entry_P
-;    
-;    ;movf bit_count, W, A
-;    ;call LCD_Write_Hex
-;
-;    decfsz bit_count, F, A
-; 
-;
-;    goto Compare_Pattern        ; If not finished, continue comparing
-;    
-;    ; Match found
-;    tblrd*                     ; Read the ASCII character from the table entry
-;    movf TABLAT, W, A           ; Load the ASCII character into WREG
-;    call Display_Result         ; Display the result
-;    return
 
     
  Next_Entry_P:
