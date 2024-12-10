@@ -1,14 +1,7 @@
 #include <xc.inc>
-global Length, Pattern   , LookupTable
-global Write_Dash, Write_Dot
-extrn LCD_Write_Hex
-    
-    
-psect    udata_acs
+global LookupTable
 
-Pattern:ds 8
    
-Length: ds 1
     
 
 psect    data
@@ -60,73 +53,5 @@ LookupTable:
 psect table_code, class=CODE
 
     
-    
-    
-Write_Dot:
-
-    ; Load initial address of Pattern into FSR0
-    clrf FSR0
-    
-    movlw low(Pattern)
-
-    movwf FSR0L, A             ; Load low byte of Pattern address
-
-    movlw high(Pattern)
-
-    movwf FSR0H, A             ; Load high byte of Pattern address
- 
-    ; Add Length to calculate the current position in RAM
-
-    movf Length, W, A          ; Get current Length
-
-    addwf FSR0L, F, A          ; Add Length to low byte of FSR0
-
-    btfsc STATUS, 0            ; Handle carry to high byte
-
-    incf FSR0H, F, A
- 
-    ; Write '.' to the calculated position
-
-    movlw 0x01                 ; Symbol for '.'
-
-    movwf INDF0, A             ; Write symbol
-
-    incf Length, F, A          ; Increment Length for next write
-    
-    return
-
- 
-Write_Dash:
-
-    ; Load initial address of Pattern into FSR0
-    clrf FSR0
-
-    movlw low(Pattern)
-
-    movwf FSR0L, A             ; Load low byte of Pattern address
-
-    movlw high(Pattern)
-
-    movwf FSR0H, A             ; Load high byte of Pattern address
- 
-    ; Add Length to calculate the current position in RAM
-
-    movf Length, W, A          ; Get current Length
-
-    addwf FSR0L, F, A          ; Add Length to low byte of FSR0
-
-    btfsc STATUS, 0            ; Handle carry to high byte
-
-    incf FSR0H, F, A
- 
-    ; Write '-' to the calculated position
-
-    movlw 0x02                 ; Symbol for '-'
-
-    movwf INDF0, A             ; Write symbol
-
-    incf Length, F, A          ; Increment Length for next write
-
-    return
 
  
