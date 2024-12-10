@@ -18,8 +18,8 @@ Keypad_Setup:
 find_column:
     movlw   0xF0        ; Set upper nibble high and lower nibble low for column reading
     movwf   TRISE, A    ; Set PORT E upper pins as inputs and lower pins as outputs
-    movlw 0xFF            ; Load 0xFF into W for delay counter initialization
-    movwf delay_count, A  ; Initialize delay counter
+    movlw   0xFF            ; Load 0xFF into W for delay counter initialization
+    movwf   delay_count, A  ; Initialize delay counter
     call    delay
     movf    PORTE, W, A ; Read PORT E value
     movwf   column, A   ; Store column value
@@ -27,8 +27,8 @@ find_column:
 find_row:
     movlw   0x0F        ; Set lower nibble high and upper nibble low for row reading
     movwf   TRISE, A    ; Set PORT E lower pins as inputs and upper pins as outputs
-    movlw 0xFF            ; Load 0xFF into W for delay counter initialization
-    movwf delay_count, A  ; Initialize delay counter
+    movlw   0xFF            ; Load 0xFF into W for delay counter initialization
+    movwf   delay_count, A  ; Initialize delay counter
     call    delay
     movf    PORTE, W, A ; Read PORT E value
     movwf   row, A      ; Store row value
