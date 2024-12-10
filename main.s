@@ -31,20 +31,21 @@ Setup:
  
 Start_Test:
     clrf Length,A
-    clrf Pattern,A
+    call Clear_Pattern
     
     ;call Write_Dash
     ;call Write_Dash
-    call Write_Dash
-    call Write_Dot
     ;call Write_Dash
     call Write_Dot
+    call Write_Dash
     call Write_Dot
+    ;call Write_Dot
     ;call Write_Dot
     ;call Write_Dash
     ;call Write_Dash
+    call Write_Dash
     ;call Write_Dash
-    ;call Write_Dash
+    ;call Write_Dot
 
 
     ;movf Length, W
@@ -96,4 +97,17 @@ Print_Loop:
  
 Print_End:
     return 
-    end rst
+    
+Clear_Pattern:
+    lfsr 1, Pattern            ; Load the base address of Pattern into FSR1
+    movlw 8                    ; Load the size of Pattern (8 bytes)
+    movwf Counter, A           ; Store it in Counter
+    goto Clear_Loop
+ 
+Clear_Loop:
+    clrf POSTINC1, A           ; Clear the current byte and increment FSR1
+    decfsz Counter, F, A       ; Decrement Counter, check if it reaches 0
+    goto Clear_Loop            ; If not, repeat the loop
+ 
+    return                     ; Return when all bytes are cleared
+end rst
