@@ -146,33 +146,78 @@ Check_Overflow:
     
     
 Write_Dot:
+    
     movlw '.'                   ; ASCII value of '.'
+    
     call LCD_Send_Byte_D        ; Written into LCD
+
+    ; Load initial address of Pattern into FSR0
+    lfsr 0, Pattern
+;    
+;    movlw low(Pattern)
+;
+;    movwf FSR0L, A             ; Load low byte of Pattern address
+;
+;    movlw high(Pattern)
+;
+;    movwf FSR0H, A             ; Load high byte of Pattern address
+; 
+    ; Add Length to calculate the current position in RAM
+
+    movf Length, W, A          ; Get current Length
+
+    addwf FSR0L, F, A          ; Add Length to low byte of FSR0
+
+    btfsc CARRY            ; Handle carry to high byte
+
+    incf FSR0H, F, A
+ 
+    ; Write '.' to the calculated position
+
+    movlw 0x01                 ; Symbol for '.'
+
+    movwf INDF0, A             ; Write symbol
+
+    incf Length, F, A          ; Increment Length for next write
     
-    movlw Pattern              ; load initial address of pattern
-    movwf FSR0, A              ; file select register
-    movf Length, W, A          ; current length
-    addwf FSR0, F, A           ; calculate target position Pattern + Length
-    movlw 0x01                  ; load '.'
-    movwf INDF0, A             ; Indirect file register,load '.' to current position
-    incf Length, F, A          ; increment length
     return
-    
-    
-    
+
+ 
 Write_Dash:
+    
     movlw '-'                   ; ASCII value of '_'
+    
     call LCD_Send_Byte_D        ; written into LCD
-    
-    movlw Pattern              ; load initial address of pattern
-    movwf FSR0, A              ; file select register
-    movf Length, W, A          ; current length
-    addwf FSR0, F, A           ; calculate target position?Pattern + Length?
-    movlw 0x02                  ; load '.'
-    movwf INDF0, A             ; Indirect file register,load '.' to current position
-    incf Length, F, A          ; increment length
-    return
-    
+
+    lfsr 0,Pattern
+;
+;    movlw low(Pattern)
+;
+;    movwf FSR0L, A             ; Load low byte of Pattern address
+;
+;    movlw high(Pattern)
+;
+;    movwf FSR0H, A             ; Load high byte of Pattern address
+; 
+    ; Add Length to calculate the current position in RAM
+
+    movf Length, W, A          ; Get current Length
+
+    addwf FSR0L, F, A          ; Add Length to low byte of FSR0
+
+    btfsc CARRY            ; Handle carry to high byte
+
+    incf FSR0H, F, A
+ 
+    ; Write '-' to the calculated position
+
+    movlw 0x02                 ; Symbol for '-'
+
+    movwf INDF0, A             ; Write symbol
+
+    incf Length, F, A          ; Increment Length for next write
+
+    return   
  
 
 
