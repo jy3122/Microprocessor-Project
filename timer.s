@@ -236,17 +236,17 @@ TIMER0_ISR:
     
     
 Long_Delay:
-    movlw 0xFF              ; ?????????
-    movwf Counter, A        ; ??? Counter
+    movlw 0xFF              ; Load 0xFF into WREG for outer counter
+    movwf Counter, A        ; Store WREG value into outer counter
     bra Outer_Loop
 Outer_Loop:
-    movlw 0xFF              ; ?????????
-    movwf delay_count, A    ; ??? delay_count
+    movlw 0xFF              ; Load 0xFF into WREG for inner counter
+    movwf delay_count, A    ; Store WREG value into inner counter
     bra Inner_Loop
 Inner_Loop:
-    decfsz delay_count, A   ; ???????
-    bra Inner_Loop          ; ???? 0???????
-    decfsz Counter, A       ; ???????
-    bra Outer_Loop          ; ???? 0???????
-    return                  ; ????
+    decfsz delay_count, A   ; decrement the inner counter, skip if zero
+    bra Inner_Loop          ; If the inner counter is not zero, loop back to Inner_Loop
+    decfsz Counter, A       ; Decrement the outer counter, skip if zero
+    bra Outer_Loop          ; If the outer counter is not zero, loop back to Outer_Loop
+    return                  
 
