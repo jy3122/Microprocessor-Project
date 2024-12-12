@@ -4,12 +4,6 @@ global Write_Dash, Write_Dot
 extrn LCD_Write_Hex
     
     
-psect    udata_acs
-
-Pattern:ds 8
-   
-Length: ds 1
-    
 
 psect    data
 
