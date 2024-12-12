@@ -53,7 +53,7 @@ nextD:
  
 
 nextC:
-    movlw   10001000B       ; Binary pattern for 'C' 
+    movlw   01000100B       ; Binary pattern for 'C' 
     cpfseq  result, A
     goto    nextnobu
     retlw   'C'        ; Return ASCII 'C'
