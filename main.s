@@ -38,19 +38,19 @@ Start_Test:
     call Start_Timer
     call Button_Released
     call Check_Overflow
-    ;call find_column
-    ;call find_row
-    ;call combine 
-    ;call find_key
-    ;movwf key, A
-    goto check_RH2
+    call find_column
+    call find_row
+    call combine 
+    call find_key
+    movwf key, A
+    ;goto check_RH2
     
 check_D:    
     movf key, W, A
     sublw 'D'
     btfss ZERO          ;skip next line if D is pressed
     goto check_C
-    goto handle_D
+   goto handle_D
     
 handle_D:
     call Decode_Morse
@@ -61,7 +61,7 @@ check_C:
     sublw 'C'
     btfss ZERO
     goto Start_Test
-    goto handle_C
+   goto handle_C
     
 handle_C:
     goto Setup
