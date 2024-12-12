@@ -23,11 +23,6 @@ rst: org 0x0000
 interrupt: org 0x0008          ; High-priority interrupt vector
            goto TIMER0_ISR     ; Jump to Timer0 interrupt service routine
 Setup:
-    banksel ANCON0
-    clrf ANCON0         ; turning analoge inputs off
-    clrf ANCON1
-    clrf ANCON2
-    banksel 0
     call Clear_Pattern
     clrf Length,A
     call Setup_Timer
@@ -35,41 +30,42 @@ Setup:
     call LCD_Clear
     call Setup_Morse
     call Keypad_Setup
-    bsf TRISH,2
-    bsf TRISH,3
-    goto Start_Test
-     
-Start_Test:
-    clrf PORTH, A
+    goto loop_button
+
 loop_button:
     call Button_Pressed
     btfss WREG,0,A    
-    goto check_RH2
+    goto check_D
     call Start_Timer
     call Button_Released
     call Check_Overflow
-    ;call find_column
-    ;call find_row
-    ;call combine 
-    ;call find_key
-    ;movwf key, A
     goto loop_button
     
-check_RH2:    
-    btfss PORTH,2,A          ;skip next line if RH2 is pressed
-    goto check_RH3
-    goto handle_RH2
+check_D:    
+    call find_column
+    call find_row
+    call combine 
+    call find_key
+    sublw 'D'
+    btfss ZERO
+    goto check_C
+    goto handle_D
     
-handle_RH2:
+handle_D:
     call Decode_Morse
-    goto Start_Test
-    
-check_RH3:
-    btfss PORTH,3, A
     goto loop_button
-    goto handle_RH3
     
-handle_RH3:
+check_C:
+    call find_column
+    call find_row
+    call combine 
+    call find_key
+    sublw 'C'
+    btfss ZERO
+    goto loop_button
+    goto handle_C
+    
+handle_C:
     goto Setup 
    
       
