@@ -13,7 +13,9 @@ Elapsed_Time_M:ds 1
 
 Elapsed_Time_H:ds 1
     
-delay_count: ds 1      ; Variable for delay routine counter
+Counter: ds 1      ; Variable for delay routine counter
+
+delay_count:ds 1
    
 Pattern: ds 5
 
@@ -49,21 +51,21 @@ Setup_Timer:
 
     clrf    TRISD,A
     return
- 
+  
+    
 Button_Pressed:
     movlw 0
     btfss PORTJ, 0,A      ; Wait for RJ0 to go high, bit test file, skip if set
     return
     ;goto Button_Pressed ;loop until pressed
     
-    movlw 0xFF            ; Load 0xFF into W for delay counter initialization
-    movwf delay_count, A  ; Initialize delay counter
-    call delay            ; Call delay subroutine
+    call Long_Delay
     
     btfss PORTJ, 0,A      ; Wait for RJ0 to go high, bit test file, skip if set
-    
     goto Button_Pressed ;loop until pressed
+    
     movlw 1
+    
     return
  
     
@@ -102,9 +104,7 @@ Button_Released:
     
     goto Button_Released  ;loop until released
     
-    movlw 0xFF            ; Load 0xFF into W for delay counter initialization
-    movwf delay_count, A  ; Initialize delay counter
-    call delay            ; Call delay subroutine
+    call Long_Delay        ; Call delay subroutine
     
     
     btfsc PORTJ,0,A
@@ -235,10 +235,18 @@ TIMER0_ISR:
     retfie f            ; Return from interrupt
     
     
-delay:
-    decfsz delay_count, A ; Decrement the delay counter until zero
-    bra delay             ; Loop until counter is zero
-    return                ; Return from delay subroutine
-
-
+Long_Delay:
+    movlw 0xFF              ; ?????????
+    movwf Counter, A        ; ??? Counter
+    bra Outer_Loop
+Outer_Loop:
+    movlw 0xFF              ; ?????????
+    movwf delay_count, A    ; ??? delay_count
+    bra Inner_Loop
+Inner_Loop:
+    decfsz delay_count, A   ; ???????
+    bra Inner_Loop          ; ???? 0???????
+    decfsz Counter, A       ; ???????
+    bra Outer_Loop          ; ???? 0???????
+    return                  ; ????
 
