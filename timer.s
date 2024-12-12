@@ -51,10 +51,10 @@ Setup_Timer:
     return
  
 Button_Pressed:
-
+    movlw 0
     btfss PORTJ, 0,A      ; Wait for RJ0 to go high, bit test file, skip if set
-    
-    goto Button_Pressed ;loop until pressed
+    return
+    ;goto Button_Pressed ;loop until pressed
     
     movlw 0xFF            ; Load 0xFF into W for delay counter initialization
     movwf delay_count, A  ; Initialize delay counter
@@ -63,7 +63,7 @@ Button_Pressed:
     btfss PORTJ, 0,A      ; Wait for RJ0 to go high, bit test file, skip if set
     
     goto Button_Pressed ;loop until pressed
-    
+    movlw 1
     return
  
     
@@ -152,15 +152,15 @@ Write_Dot:
     call LCD_Send_Byte_D        ; Written into LCD
 
     ; Load initial address of Pattern into FSR0
-    lfsr 0, Pattern
+;    lfsr 0, Pattern
 ;    
-;    movlw low(Pattern)
+    movlw low(Pattern)
 ;
-;    movwf FSR0L, A             ; Load low byte of Pattern address
+    movwf FSR0L, A             ; Load low byte of Pattern address
 ;
-;    movlw high(Pattern)
+    movlw high(Pattern)
 ;
-;    movwf FSR0H, A             ; Load high byte of Pattern address
+    movwf FSR0H, A             ; Load high byte of Pattern address
 ; 
     ; Add Length to calculate the current position in RAM
 
@@ -189,15 +189,15 @@ Write_Dash:
     
     call LCD_Send_Byte_D        ; written into LCD
 
-    lfsr 0,Pattern
+;    lfsr 0,Pattern
 ;
-;    movlw low(Pattern)
+    movlw low(Pattern)
 ;
-;    movwf FSR0L, A             ; Load low byte of Pattern address
+    movwf FSR0L, A             ; Load low byte of Pattern address
 ;
-;    movlw high(Pattern)
-;
-;    movwf FSR0H, A             ; Load high byte of Pattern address
+    movlw high(Pattern)
+
+    movwf FSR0H, A             ; Load high byte of Pattern address
 ; 
     ; Add Length to calculate the current position in RAM
 
